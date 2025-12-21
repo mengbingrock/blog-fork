@@ -1,12 +1,12 @@
 # Context Engineering & Reuse Pattern under the hood of Claude Code
 
-![](assets/20251217_173315_claude_code_backup.png)
+![](assets/claude_code_diagram.png)
 
 Over the last few months, [Claude Code](https://www.claude.com/product/claude-code) has quietly become one of the most interesting & widely-adopted real-world agentic systems available to normal developers.
 
 Unlike ***cloud-only agents*** whose internals remain hidden behind API gateways like [Perplexity](https://www.perplexity.ai/api-platform), [Devin](https://devin.ai/), or [Manus](https://manus.im/), nor as fully ***open source agents*** like [Mini SWE Agent](https://github.com/SWE-agent/mini-swe-agent) or [Terminus 2](https://github.com/laude-institute/harbor/blob/main/src/harbor/agents/terminus_2/terminus_2.py) where you can deploy locally with source code, Claude Code runs ***partially locally*** — it has a open-sourced [client repo](https://github.com/anthropics/claude-code) running on the local machine, which gives us a rare opportunity: to inject the traffic it sends and reverse engineering **to see every single LLM call**, every intermediate **tool invocation**, every tiny decision the agent makes.
 
-Recently, we ran a tiny one-shot experiment with Claude Code and captured everything into a **raw** log file: [**`*.jsonl`**](https://github.com/LMCache/lmcache-agent-trace). If you put this into the visualizer, you can see the trace. In total, it invokes 92 llm calls(#1-#92), consumes ~2M input tokens in total and lasts for 13 minutes.
+Recently, we ran a tiny one-shot experiment with Claude Code and captured everything into a **raw** log file: [**`claude_code_trace.jsonl`**](https://github.com/kobe0938/blog/blob/master/claude-code/claude_code_trace.jsonl). If you put this into the [visualizer](https://v0-llm-agent-dashboard.vercel.app/), you can see the trace. In total, it invokes 92 llm calls(#1-#92), consumes ~2M input tokens in total and lasts for 13 minutes. The total prefix reuse rate is 92%.
 
 ![](assets/visualizer-screenshot.png)
 
@@ -37,9 +37,7 @@ We randomly select one [task](https://huggingface.co/datasets/princeton-nlp/SWE-
 
 And this is the exactly the prompt that Claude Code received.
 
----
-
-![](assets/20251217_231606_phase1.png)
+![](assets/20251221_141623_trace1-46.png)
 
 Surprisingly, before any fancy reasoning, Cluade Code ran a couple of "Warm up" steps(trace id#2, #3, #4) before the actual task. Warm up steps do nothing but just input the prompt for tool list(#2), explore subagent(#3), and plan subagent(#4). Warm up steps are used for cache purposes as later when those tools and subagents being called, the cache will be hit, which results in faster response time. The summization agent(#1) and new topic agent(#5) are used for summarizing the context and generating a new title for displaying - just as the chatgpt sidebar works.
 
@@ -49,11 +47,12 @@ Immediately after the main agent(#6), it invokes the Explore(also called file se
 
 > You are Claude Code, Anthropic's official CLI for Claude. You are a file search specialist for Claude Code, Anthropic's official CLI for Claude. You excel at thoroughly navigating and exploring codebases.
 
-Interestingly, the Explore subagent(*#7*) is not the only subagent that Claude Code can invoked. Instead, it invokes 3 Explore subagents(lifespan: #7 - #, #8 - #, #9 - #45) in parallel to explore the codebase, each with a different goal: 1. Explore JSONField implementation; 2. Explore admin display_for_field; 3. Explore readonly field rendering. The context of the main agent(#6) is not carried to the subagents, which is a good thing for the subagents to have a fresh start. Each Explore subagent can invoke **1-3** tools **in parallel**, where the tools are from the tool list of the Explore subagent, which is only a subset(**10/18**) of the main agent's tool list. The [ReAct](https://arxiv.org/pdf/2210.03629) mechanism is used here, where the Explore subagent will invoke a tool call, and then based on the tool output, it will observe and invoke another tool call to explore the codebase further until it deems it has explored enough.
+Interestingly, the Explore subagent(*#7*) is not the only subagent that Claude Code can invoked. Instead, it invokes 3 Explore subagents(lifespan: #7 - #26, #8 - #37, #9 - #45) in parallel to explore the codebase, each with a different goal: 1. Explore JSONField implementation; 2. Explore admin display_for_field; 3. Explore readonly field rendering. The context of the main agent(#6) is not carried to the subagents, which is a good thing for the subagents to have a fresh start. Each Explore subagent can invoke **1-3** tools **in parallel**, where the tools are from the tool list of the Explore subagent, which is only a subset(**10/18**) of the main agent's tool list. The [ReAct](https://arxiv.org/pdf/2210.03629) mechanism is used here, where the Explore subagent will invoke a tool call, and then based on the tool output, it will observe and invoke another tool call to explore the codebase further until it deems it has explored enough.
 
 Finally, after the slowest Explore subagents finished its exploration at step #45, at step #46, the main agent appends the findings(summerizations) from all 3 Explore subagents to the context, and then invokes the Plan subagent(#47) to plan the fix.
 
 ---
+![](assets/20251221_141623_trace47-72.png)
 
 Similar to Explore Agent, Plan Agent(#47) also has a different system prompt, where it's main goal is to plan the fix:
 
@@ -68,9 +67,9 @@ The plan agent did not carry all the context from the main agent nor the Explore
 > 3. Identifies any edge cases or potential issues
 > 4. Recommends the best approach given Django's architecture
 
-Similarly, the plan agent also follows the ReAct pattern and loop the tool calling from #47 to #72, where the context accumulates from 11,552 tokens to 38,819 tokens. After having a good plan(see details in #72 about the plan), the plan agent will return to the main agent(#73) with the plan. The main agent will then invoke a series of tool calls to review the plan(#73), ask user for clarification(#74), and write the plan into a md file(#75). Finally, the main agent will exit the plan mode(#76) and enter the execute mode(#77) to execute the plan after interactively ask user for plan approval(#76-#77).
-
 ---
+![](assets/20251221_141623_trace73-92.png)
+Similarly, the plan agent also follows the ReAct pattern and loop the tool calling from #47 to #72, where the context accumulates from 11,552 tokens to 38,819 tokens. After having a good plan(see details in #72 about the plan), the plan agent will return to the main agent(#73) with the plan. The main agent will then invoke a series of tool calls to review the plan(#73), ask user for clarification(#74), and write the plan into a md file(#75). Finally, the main agent will exit the plan mode(#76) and enter the execute mode(#77) to execute the plan after interactively ask user for plan approval(#76-#77).
 
 The execution phase(#77-#91) still follows the ReAct pattern. The main agent will use the plan markdown file as a todo list.
 
