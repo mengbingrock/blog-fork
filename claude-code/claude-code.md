@@ -8,7 +8,7 @@ Unlike ***cloud-only agents*** whose internals remain hidden behind API gateways
 
 Recently, we ran a tiny one-shot experiment (one random task from the [SWE-bench_Verified](https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified) dataset) with Claude Code and captured everything into a **raw** log file: [**`claude_code_trace.jsonl`**](https://github.com/kobe0938/blog/blob/master/claude-code/claude_code_trace.jsonl). If you paste [this](https://github.com/kobe0938/blog/blob/master/claude-code/claude_code_trace.jsonl) into the [visualizer](https://v0-llm-agent-dashboard.vercel.app/), you can see the trace. 
 Key metrics:
-- **92 LLM calls** (#1-#92)
+- **92 LLM calls** (`#1-#92`)
 - **~2M input tokens** consumed
 - **13 minutes** total duration
 - **92% prefix reuse rate**
@@ -45,40 +45,40 @@ And this is exactly the prompt that Claude Code received.
 
 ![Trace 1-46](assets/trace1-46.png)
 
-Surprisingly, before any fancy reasoning, Claude Code ran a couple of **"warm-up" steps** (trace ID #2, #3, #4) before the actual task. Warm-up steps do nothing but input the prompt for:
-- Tool list (#2)
-- Explore subagent (#3)
-- Plan subagent (#4)
+Surprisingly, before any fancy reasoning, Claude Code ran a couple of **"warm-up" steps** (trace ID `#2`, `#3`, `#4`) before the actual task. Warm-up steps do nothing but input the prompt for:
+- Tool list (`#2`)
+- Explore subagent (`#3`)
+- Plan subagent (`#4`)
 
-Warm-up steps are used for caching purposes—later when those tools and subagents are called, the cache will be hit, resulting in faster response time. The summarization agent (#1) and new topic agent (#5) are used for summarizing the context and generating a new title for display—just as the ChatGPT sidebar works.
+Warm-up steps are used for caching purposes—later when those tools and subagents are called, the cache will be hit, resulting in faster response time. The summarization agent (`#1`) and new topic agent (`#5`) are used for summarizing the context and generating a new title for display—just as the ChatGPT sidebar works.
 
-The main agent (#6) comes with a huge system prompt, including git history, status, tool list, etc. The **18 tools** in the tool list not only have the ability to use normal tool calls like `Bash`, `Grep`, `Read`, `WebFetch`, `AskUserQuestion`, etc., but also the ability to invoke and delegate certain tasks to subagents like:
-- Explore subagent (#7)
-- Plan subagent (#46)
+The main agent (`#6`) comes with a huge system prompt, including git history, status, tool list, etc. The **18 tools** in the tool list not only have the ability to use normal tool calls like `Bash`, `Grep`, `Read`, `WebFetch`, `AskUserQuestion`, etc., but also the ability to invoke and delegate certain tasks to subagents like:
+- Explore subagent (`#7`)
+- Plan subagent (`#46`)
 
 These subagents will invoke tool calls from their own tool lists.
 
-Immediately after the main agent (#6), it invokes the **Explore** (also called file search agent) subagent (#7), which will invoke tool calls from its tool list to explore the codebase. It starts with a different system prompt where its main goal is to explore the codebase:
+Immediately after the main agent (`#6`), it invokes the **Explore** (also called file search agent) subagent (`#7`), which will invoke tool calls from its tool list to explore the codebase. It starts with a different system prompt where its main goal is to explore the codebase:
 
 > You are Claude Code, Anthropic's official CLI for Claude. You are a file search specialist for Claude Code, Anthropic's official CLI for Claude. You excel at thoroughly navigating and exploring codebases.
 
-Interestingly, the Explore subagent (#7) is not the only subagent that Claude Code can invoke. Instead, it invokes **3 Explore subagents in parallel** to explore the codebase, each with a different goal:
+Interestingly, the Explore subagent (`#7`) is not the only subagent that Claude Code can invoke. Instead, it invokes **3 Explore subagents in parallel** to explore the codebase, each with a different goal:
 
-1. **Explore JSONField implementation** (lifespan: #7 - #26)
-2. **Explore admin display_for_field** (lifespan: #8 - #37)
-3. **Explore readonly field rendering** (lifespan: #9 - #45)
+1. **Explore JSONField implementation** (lifespan: `#7-#26`)
+2. **Explore admin display_for_field** (lifespan: `#8-#37`)
+3. **Explore readonly field rendering** (lifespan: `#9-#45`)
 
-The context of the main agent (#6) is **not** carried to the subagents, which is beneficial for the subagents to have a fresh start. Each Explore subagent can invoke **1-3 tools in parallel**, where the tools are from the tool list of the Explore subagent—a subset (**10/18**) of the main agent's tool list. 
+The context of the main agent (`#6`) is **not** carried to the subagents, which is beneficial for the subagents to have a fresh start. Each Explore subagent can invoke **1-3 tools in parallel**, where the tools are from the tool list of the Explore subagent—a subset (**10/18**) of the main agent's tool list. 
 
 The [ReAct](https://arxiv.org/pdf/2210.03629) mechanism is used here: the Explore subagent will invoke a tool call, then based on the tool output, it will observe and invoke another tool call to explore the codebase further until it deems it has explored enough.
 
-Finally, after the slowest Explore subagent finishes its exploration at step #45, at step #46, the main agent appends the findings (summarizations) from all 3 Explore subagents to the context, and then invokes the Plan subagent (#47) to plan the fix.
+Finally, after the slowest Explore subagent finishes its exploration at step `#45`, at step `#46`, the main agent appends the findings (summarizations) from all 3 Explore subagents to the context, and then invokes the Plan subagent (`#47`) to plan the fix.
 
 ---
 
 ![Trace 47-76](assets/trace47-76.png)
 
-Similar to the Explore Agent, the Plan Agent (#47) also has a different system prompt, where its main goal is to plan the fix:
+Similar to the Explore Agent, the Plan Agent (`#47`) also has a different system prompt, where its main goal is to plan the fix:
 
 > You are Claude Code, Anthropic's official CLI for Claude. You are a software architect and planning specialist for Claude Code. Your role is to explore the codebase and design implementation plans.
 
@@ -95,25 +95,25 @@ The Plan Agent did not carry all the context from the main agent nor the Explore
 
 ![Trace 77-92](assets/trace77-92.png)
 
-Similarly, the Plan Agent also follows the ReAct pattern and loops through tool calling from #47 to #72, where the context accumulates from **11,552 tokens** to **38,819 tokens**. After having a good plan (see details in #72), the Plan Agent will return to the main agent (#73) with the plan. 
+Similarly, the Plan Agent also follows the ReAct pattern and loops through tool calling from `#47` to `#72`, where the context accumulates from **11,552 tokens** to **38,819 tokens**. After having a good plan (see details in `#72`), the Plan Agent will return to the main agent (`#73`) with the plan. 
 
 The main agent will then invoke a series of tool calls to:
-- Review the plan (#73)
-- Ask user for clarification (#74)
-- Write the plan into a markdown file (#75)
+- Review the plan (`#73`)
+- Ask user for clarification (`#74`)
+- Write the plan into a markdown file (`#75`)
 
-Finally, the main agent will exit the plan mode (#76) and enter the execute mode (#77) to execute the plan after interactively asking the user for plan approval (#76-#77).
+Finally, the main agent will exit the plan mode (`#76`) and enter the execute mode (`#77`) to execute the plan after interactively asking the user for plan approval (`#76-#77`).
 
-The **execution phase** (#77-#91) still follows the ReAct pattern. The main agent will use the plan markdown file as a todo list:
+The **execution phase** (`#77-#91`) still follows the ReAct pattern. The main agent will use the plan markdown file as a todo list:
 
 > 1. Add json import to `utils.py`
 > 2. Add JSONField handling to `display_for_field()`
 > 3. Add tests to `test_admin_utils.py`
 > 4. Run the tests to verify
 
-After executing some tool calls to read or edit files, it will cross out the todo items in the plan markdown file. Once all the todo items are crossed out, the main agent will end with a conclusion message (#92). 
+After executing some tool calls to read or edit files, it will cross out the todo items in the plan markdown file. Once all the todo items are crossed out, the main agent will end with a conclusion message (`#92`). 
 
-During this phase, there are some other subagents being invoked—e.g., the **Extract Bash Command** subagent (#93), where there's only a one-shot prompt template for the subagent to extract the bash command in order to not run dangerous commands like `rm` without user confirmation by accident.
+During this phase, there are some other subagents being invoked—e.g., the **Extract Bash Command** subagent (`#93`), where there's only a one-shot prompt template for the subagent to extract the bash command in order to not run dangerous commands like `rm` without user confirmation by accident.
 
 ---
 
@@ -125,12 +125,12 @@ During our trace analysis, one phenomenon was so consistent it deserves its own 
 
 Prefix reuse means that one part of the prompt prefix is seen in the previous prompts' prefix. Across all phases, the prompt reuse rate is extremely high: **92%**. For ReAct-based subagent loops, it's even higher. If we run prefix-length analysis in particular sections:
 
-| Trace ID | Total Tokens | Shared Prefix % | Notes                        |
-|----------|--------------|-----------------|------------------------------|
-| #1-#6    | 47,177       | 0.22%           | Warm-up and initial phase    |
-| #7-#45   | 546,104      | 92.06%          | Explore subagent phase       |
-| #47-#72  | 528,286      | 93.23%          | Plan subagent phase          |
-| #73-#92  | 827,411      | 97.83%          | Main agent execution phase   |
+| Trace ID     | Total Tokens | Shared Prefix % | Notes                        |
+|--------------|--------------|-----------------|------------------------------|
+| `#1-#6`      | 47,177       | 0.22%           | Warm-up and initial phase    |
+| `#7-#45`     | 546,104      | 92.06%          | Explore subagent phase       |
+| `#47-#72`    | 528,286      | 93.23%          | Plan subagent phase          |
+| `#73-#92`    | 827,411      | 97.83%          | Main agent execution phase   |
 
 What does this mean? Claude Code’s architecture practically **optimizes itself for KV cache reusage**, even without explicitly trying.
 
@@ -171,11 +171,11 @@ Even though the task was trivial, the trace reveals a lot about Claude Code as a
 
 * **The system prompt is huge and comprehensive** Every agent call reconstructs a massive system prompt containing: Git repository state and history + Complete tool specifications (18 tools for main agent) + Conversation history and tool outputs + Execution phase instructions. The main agent's system prompt alone is around **20,000 tokens**.
 
-* **"Warm-up" calls prime the cache before real work begins** Before tackling the actual task, Claude Code makes seemingly redundant calls (#2, #3, #4) that: Load tool specifications into cache, Prime subagent system prompts, Establish stable prefix baselines. These warm-up steps cost very little (cache write overhead) but dramatically accelerate subsequent subagent invocations through cache hits.
+* **"Warm-up" calls prime the cache before real work begins** Before tackling the actual task, Claude Code makes seemingly redundant calls (`#2`, `#3`, `#4`) that: Load tool specifications into cache, Prime subagent system prompts, Establish stable prefix baselines. These warm-up steps cost very little (cache write overhead) but dramatically accelerate subsequent subagent invocations through cache hits.
 
 * **The architecture naturally optimizes for KV cache reuse** ReAct loops in subagents & main agent maintain stable system prompts while appending tool outputs, Parallel execution causes multiple agents to share common prefix components, Persistent conversation buffer ensures the main agent's context grows incrementally. The result: **92%** overall prefix reuse, with execution phase peaking at **97.83%** — exactly the workload pattern that modern caching systems are designed for, which results in a significant cost savings of $4.85 (81% reduction) over one simple task.
 
-* **Interactive planning approval creates a natural breakpoint** The workflow explicitly pauses between planning (#72) and execution (#77) to ask for user approval. This serves multiple purposes: Gives users control over what changes will be made, Creates a checkpoint where the plan can be refined, Allows the system to write the plan to a markdown file that serves as an executable todo list. This design choice prioritizes transparency and user agency over fully autonomous operation.
+* **Interactive planning approval creates a natural breakpoint** The workflow explicitly pauses between planning (`#72`) and execution (`#77`) to ask for user approval. This serves multiple purposes: Gives users control over what changes will be made, Creates a checkpoint where the plan can be refined, Allows the system to write the plan to a markdown file that serves as an executable todo list. This design choice prioritizes transparency and user agency over fully autonomous operation.
 
 ---
 
