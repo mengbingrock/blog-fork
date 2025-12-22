@@ -1,6 +1,6 @@
 # Context Engineering & Reuse Pattern Under the Hood of Claude Code
 
-![Claude Code Architecture](assets/claude_code_diagram.png)
+![Claude Code Architecture](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/claude_code_diagram.png)
 
 Over the last few months, [Claude Code](https://www.claude.com/product/claude-code) has quietly become one of the most interesting & widely-adopted real-world agentic systems available to normal developers.
 
@@ -15,7 +15,7 @@ Recently, we ran a tiny one-shot experiment (one random task from the [SWE-bench
 - **13 minutes** total duration
 - **92% prefix reuse rate**
 
-![Visualizer Screenshot](assets/visualizer-screenshot.png)
+![Visualizer Screenshot](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/visualizer-screenshot.png)
 
 The goal was simple:
 
@@ -45,7 +45,7 @@ We randomly select one [task (#80)](https://huggingface.co/datasets/princeton-nl
 
 And this is exactly the prompt that Claude Code received.
 
-![Trace 1-46](assets/trace1-46.png)
+![Trace 1-46](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/trace1-46.png)
 
 Surprisingly, before any fancy reasoning, Claude Code ran a couple of **"warm-up" steps** (trace ID `#2`, `#3`, `#4`) before the actual task. Warm-up steps do nothing but input the prompt for:
 
@@ -80,7 +80,7 @@ Finally, after the slowest Explore subagent finishes its exploration at step `#4
 
 ---
 
-![Trace 47-76](assets/trace47-76.png)
+![Trace 47-76](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/trace47-76.png)
 
 Similar to the Explore Agent, the Plan Agent (`#47`) also has a different system prompt, where its main goal is to plan the fix:
 
@@ -97,7 +97,7 @@ The Plan Agent did not carry all the context from the main agent nor the Explore
 
 ---
 
-![Trace 77-92](assets/trace77-92.png)
+![Trace 77-92](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/trace77-92.png)
 
 Similarly, the Plan Agent also follows the ReAct pattern and loops through tool calling from `#47` to `#72`, where the context accumulates from **11,552 tokens** to **38,819 tokens**. After having a good plan (see details in `#72`), the Plan Agent will return to the main agent (`#73`) with the plan.
 
@@ -122,7 +122,7 @@ During this phase, there are some other subagents being invoked—e.g., the **Ex
 
 And this is the whole diagram of the claude code trace:
 
-![Claude Code Trace Diagram](assets/claude_code_diagram.png)
+![Claude Code Trace Diagram](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/claude_code_diagram.png)
 
 ---
 
@@ -153,8 +153,8 @@ At the heart of Large Language Model inference lies the **KV cache** (key-value 
 
 Major LLM providers have turned this into significant cost savings:
 
-- **[OpenAI&#39;s Prompt Caching](https://platform.openai.com/docs/guides/prompt-caching)** handles prefix caching **automatically** — it detects common prefixes longer than 1,024 tokens and caches them transparently, offering a **90% discount** on cached input tokens (e.g., GPT-5.2 drops from $1.75 to $0.175 per million cached tokens) ![OpenAI Prompt Caching](assets/openai_cache_pricing.png)
-- **[Anthropic&#39;s cache hit pricing](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)** gives developers **explicit control** over which prompt blocks to cache using special `cache_control` markers, charging a slightly higher cache write cost (1.25x base price for 5-minute cache, 2x for 1-hour cache) but delivering the same **90% discount** on cache reads (Claude Sonnet 4.5: $0.30 per million tokens for cache reads versus $3.00 for base input), allowing fine-grained optimization for complex multi-turn conversations or document-heavy workflows ![Anthropic Prompt Caching](assets/anthropic_cache_pricing.png)
+- **[OpenAI&#39;s Prompt Caching](https://platform.openai.com/docs/guides/prompt-caching)** handles prefix caching **automatically** — it detects common prefixes longer than 1,024 tokens and caches them transparently, offering a **90% discount** on cached input tokens (e.g., GPT-5.2 drops from $1.75 to $0.175 per million cached tokens) ![OpenAI Prompt Caching](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/openai_cache_pricing.png)
+- **[Anthropic&#39;s cache hit pricing](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)** gives developers **explicit control** over which prompt blocks to cache using special `cache_control` markers, charging a slightly higher cache write cost (1.25x base price for 5-minute cache, 2x for 1-hour cache) but delivering the same **90% discount** on cache reads (Claude Sonnet 4.5: $0.30 per million tokens for cache reads versus $3.00 for base input), allowing fine-grained optimization for complex multi-turn conversations or document-heavy workflows ![Anthropic Prompt Caching](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/anthropic_cache_pricing.png)
 
 To put this in perspective with Claude Code's 92% prefix reuse pattern: processing 2M input tokens (our consumption for the experiment) **without caching** would cost **$6.00** (2M × $3/MTok), but **with prefix caching**, the cost drops to just **$1.152** (1.84M cache hits × $0.30/MTok + 0.16M cache writes × $3.75/MTok) — a savings of **$4.85 (81% reduction)** over one simple task.
 
@@ -204,7 +204,7 @@ Even though the task was trivial, the trace reveals a lot about Claude Code as a
 
 Recently, there are some interesting research papers that try to improve non-prefix caching efficiency, such as [CacheBlend](https://arxiv.org/abs/2405.16444), where optimizations can be made even on non-prefix (substring) caching.
 
-![CacheBlend](assets/cache_blend.png)
+![CacheBlend](https://raw.githubusercontent.com/kobe0938/blog/master/claude-code/assets/cache_blend.png)
 
 In our trace, we can see that the subagents have a tool list that is a subset of the main agent's tool list, which means that the subagents can reuse the main agent's tool list descriptions. This is a good example of how to improve non-prefix caching efficiency.
 
