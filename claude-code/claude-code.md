@@ -170,13 +170,31 @@ Beyond cost savings, prefix cache hits dramatically reduce **TTFT (time to first
 
 Even though the task was trivial, the trace reveals a lot about Claude Code as a system:
 
-* **Claude Code is built around specialized subagents with focused responsibilities** The main agent doesn't try to do everything — instead, it delegates to specialized subagents. This separation of concerns allows each subagent to operate with a clean context and focused subtasks, rather than carrying the full conversation history in order to avoid context bloat.
-* **Parallel subagent execution is a core architectural pattern** Claude Code doesn't explore sequentially — it spawns multiple Explore subagents in parallel with different search goals. Main agent/each subagent can invoke 1-3 tools in parallel within its own ReAct loop, maximizing exploration efficiency while maintaining isolation.
-* **Context is strategically discarded, not accumulated** Subagents don't inherit the main agent's full context — they receive only: A fresh system prompt defining their role A summarized task description. This prevents context bloat and keeps each subagent focused. When subagents complete, only their**summarized findings** flow back to the main agent, not their entire execution trace. Subagents don't inherit the main agent's full context — they receive only: A fresh system prompt defining their role + A summarized task description This prevents context bloat and keeps each subagent focused. When subagents complete, only their**summarized findings** flow back to the main agent, not their entire execution trace.
-* **The system prompt is huge and comprehensive** Every agent call reconstructs a massive system prompt containing: Git repository state and history + Complete tool specifications (18 tools for main agent) + Conversation history and tool outputs + Execution phase instructions. The main agent's system prompt alone is around**20,000 tokens**.
-* **"Warm-up" calls prime the cache before real work begins** Before tackling the actual task, Claude Code makes seemingly redundant calls (`#2`,`#3`,`#4`) that: Load tool specifications into cache, Prime subagent system prompts, Establish stable prefix baselines. These warm-up steps cost very little (cache write overhead) but dramatically accelerate subsequent subagent invocations through cache hits.
-* **The architecture naturally optimizes for KV cache reuse** ReAct loops in subagents & main agent maintain stable system prompts while appending tool outputs, Parallel execution causes multiple agents to share common prefix components, Persistent conversation buffer ensures the main agent's context grows incrementally. The result:**92%** overall prefix reuse, with execution phase peaking at**97.83%** — exactly the workload pattern that modern caching systems are designed for, which results in a significant cost savings of $4.85 (81% reduction) over one simple task.
-* **Interactive planning approval creates a natural breakpoint** The workflow explicitly pauses between planning (`#72`) and execution (`#77`) to ask for user approval. This serves multiple purposes: Gives users control over what changes will be made, Creates a checkpoint where the plan can be refined, Allows the system to write the plan to a markdown file that serves as an executable todo list. This design choice prioritizes transparency and user agency over fully autonomous operation.
+**The main system prompt is huge**
+- It contains: Complete git repository state and history + full tool specifications (18 tools for main agent) + finally, execution phase instructions
+- The prompt alone is **20,000+ tokens** without conversation history
+
+**Claude Code is built around specialized subagents**
+- Subagents receive only role-specific context, reducing bloat
+- Separation of context allows the main agent to only run on the summarized subagent responses
+
+**Parallel execution is used to maximize exploration efficiency**
+- Subagents are spawned in parallel with different search goals under their own ReAct loop
+- This separation allows clean context and focused subtasks, distributing context evenly
+- Tool calls are also run in parallel for the same benefits
+
+**"Warm-up" calls prime the cache before real work begins**
+- They load tool specifications into cache, prime subagent system prompts, and establish stable prefix baselines
+- These calls drastically accelerate subsequent subagent invocations
+
+**Claude works well with KV cache reuse**
+- Claude reaches up to **92% overall prefix reuse**, perfect for KV cache reuse optimization
+- Results in a significant cost savings of **$4.85 (81% reduction)** over one simple task
+
+**Interactive planning improves transparency**
+- Gives users control over what changes will be made
+- Creates a natural breakpoint prompting the user for approval
+- Responses allow the system to create a more refined executable todo list, improving workflow
 
 ---
 
