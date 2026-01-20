@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 180" width="1000" height="180">
+  <defs>
+    <linearGradient id="stepGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect x="10" y="10" width="980" height="160" rx="15" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  
+  <!-- Title -->
+  <text x="500" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#333">How Skill Caching Works</text>
+  
+  <!-- Step 1 -->
+  <circle cx="80" cy="90" r="25" fill="url(#stepGrad)"/>
+  <text x="80" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">1</text>
+  <text x="80" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Initialize Pool</text>
+  <text x="80" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">Pre-fetch skill files</text>
+  <text x="80" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">into cache pool</text>
+  
+  <!-- Arrow 1 -->
+  <text x="155" y="95" font-size="24" fill="#ccc">→</text>
+  
+  <!-- Step 2 -->
+  <circle cx="230" cy="90" r="25" fill="url(#stepGrad)"/>
+  <text x="230" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">2</text>
+  <text x="230" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">User Request</text>
+  <text x="230" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">User asks to fill</text>
+  <text x="230" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">out a PDF form</text>
+  
+  <!-- Arrow 2 -->
+  <text x="305" y="95" font-size="24" fill="#ccc">→</text>
+  
+  <!-- Step 3 -->
+  <circle cx="380" cy="90" r="25" fill="url(#stepGrad)"/>
+  <text x="380" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">3</text>
+  <text x="380" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">Claude Reads Skill</text>
+  <text x="380" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">Tool reads SKILL.md</text>
+  <text x="380" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">and referenced files</text>
+  
+  <!-- Arrow 3 -->
+  <text x="455" y="95" font-size="24" fill="#ccc">→</text>
+  
+  <!-- Step 4 -->
+  <circle cx="530" cy="90" r="25" fill="url(#stepGrad)"/>
+  <text x="530" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">4</text>
+  <text x="530" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">CacheBlend Match</text>
+  <text x="530" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">Content matched using</text>
+  <text x="530" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">longest common substring</text>
+  
+  <!-- Arrow 4 -->
+  <text x="605" y="95" font-size="24" fill="#ccc">→</text>
+  
+  <!-- Step 5 -->
+  <circle cx="680" cy="90" r="25" fill="url(#stepGrad)"/>
+  <text x="680" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">5</text>
+  <text x="680" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#333">KV Concatenate</text>
+  <text x="680" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">Blend cached KV</text>
+  <text x="680" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">with new context</text>
+  
+  <!-- Arrow 5 -->
+  <text x="755" y="95" font-size="24" fill="#ccc">→</text>
+  
+  <!-- Step 6 (Result) -->
+  <circle cx="830" cy="90" r="25" fill="#4caf50"/>
+  <text x="830" y="97" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white">✓</text>
+  <text x="830" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2e7d32">Cache Hit!</text>
+  <text x="830" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">85% tokens cached</text>
+  <text x="830" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">15% new processed</text>
+  
+  <!-- Result highlight -->
+  <rect x="900" y="70" width="80" height="50" rx="8" fill="#e8f5e9" stroke="#4caf50" stroke-width="2"/>
+  <text x="940" y="93" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#2e7d32">85%</text>
+  <text x="940" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#666">Hit Rate</text>
+</svg>

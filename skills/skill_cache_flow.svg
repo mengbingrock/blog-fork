@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="1000" height="400">
+  <defs>
+    <linearGradient id="poolGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f5e9"/>
+      <stop offset="100%" style="stop-color:#c8e6c9"/>
+    </linearGradient>
+    <linearGradient id="contextGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e3f2fd"/>
+      <stop offset="100%" style="stop-color:#bbdefb"/>
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4caf50"/>
+      <stop offset="100%" style="stop-color:#2196f3"/>
+    </linearGradient>
+    <linearGradient id="statGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff3e0"/>
+      <stop offset="100%" style="stop-color:#ffe0b2"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Title -->
+  <text x="500" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1a1a1a">Skill Caching Strategy for LLM Context</text>
+  
+  <!-- Cache Pool Section -->
+  <rect x="20" y="60" width="280" height="320" rx="15" fill="url(#poolGrad)" stroke="#4caf50" stroke-width="2"/>
+  <text x="160" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2e7d32">📦 PRE-CACHED SKILL POOL</text>
+  
+  <!-- Pool Items -->
+  <rect x="35" y="110" width="250" height="60" rx="8" fill="white" stroke="#81c784" stroke-width="2"/>
+  <rect x="45" y="120" width="20" height="20" rx="4" fill="#4caf50"/>
+  <text x="52" y="135" text-anchor="middle" font-size="10" fill="white">📄</text>
+  <text x="75" y="135" font-family="monospace" font-size="12" font-weight="bold" fill="#2e7d32">SKILL.md</text>
+  <rect x="45" y="145" width="230" height="20" rx="4" fill="#f5f5f5"/>
+  <text x="55" y="159" font-family="monospace" font-size="9" fill="#666"># PDF Skill - Comprehensive...</text>
+  
+  <rect x="35" y="180" width="250" height="60" rx="8" fill="white" stroke="#81c784" stroke-width="2"/>
+  <rect x="45" y="190" width="20" height="20" rx="4" fill="#4caf50"/>
+  <text x="52" y="205" text-anchor="middle" font-size="10" fill="white">📝</text>
+  <text x="75" y="205" font-family="monospace" font-size="12" font-weight="bold" fill="#2e7d32">forms.md</text>
+  <rect x="45" y="215" width="230" height="20" rx="4" fill="#f5f5f5"/>
+  <text x="55" y="229" font-family="monospace" font-size="9" fill="#666">**CRITICAL: You MUST...</text>
+  
+  <rect x="35" y="250" width="250" height="60" rx="8" fill="white" stroke="#81c784" stroke-width="2"/>
+  <rect x="45" y="260" width="20" height="20" rx="4" fill="#4caf50"/>
+  <text x="52" y="275" text-anchor="middle" font-size="10" fill="white">📚</text>
+  <text x="75" y="275" font-family="monospace" font-size="12" font-weight="bold" fill="#2e7d32">reference.md</text>
+  <rect x="45" y="285" width="230" height="20" rx="4" fill="#f5f5f5"/>
+  <text x="55" y="299" font-family="monospace" font-size="9" fill="#666">Advanced PDF operations...</text>
+  
+  <!-- Flow Arrow Section -->
+  <text x="400" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#666">CacheBlend</text>
+  <text x="400" y="158" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#666">Matching</text>
+  <line x1="320" y1="200" x2="460" y2="200" stroke="url(#arrowGrad)" stroke-width="4" stroke-linecap="round"/>
+  <polygon points="460,200 445,192 445,208" fill="#2196f3"/>
+  <text x="400" y="230" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#666">Token Comparison</text>
+  
+  <!-- Stats Box -->
+  <rect x="340" y="260" width="120" height="70" rx="10" fill="url(#statGrad)" stroke="#ff9800" stroke-width="2"/>
+  <text x="400" y="295" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#e65100">85%</text>
+  <text x="400" y="318" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#666">Cache Hit Rate</text>
+  
+  <!-- Context Window Section -->
+  <rect x="500" y="60" width="480" height="320" rx="15" fill="url(#contextGrad)" stroke="#2196f3" stroke-width="2"/>
+  <text x="740" y="90" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1565c0">🖥️ CONTEXT WINDOW</text>
+  
+  <!-- Context Items -->
+  <rect x="515" y="105" width="450" height="35" rx="6" fill="white" stroke="#90caf9" stroke-width="2"/>
+  <text x="525" y="118" font-family="Arial, sans-serif" font-size="9" fill="#888">System Prompt</text>
+  <text x="525" y="132" font-family="monospace" font-size="10" fill="#333">&lt;...agent's core system prompt...&gt;</text>
+  
+  <rect x="515" y="145" width="450" height="35" rx="6" fill="white" stroke="#90caf9" stroke-width="2"/>
+  <text x="525" y="158" font-family="Arial, sans-serif" font-size="9" fill="#888">Skill Snippets</text>
+  <text x="525" y="172" font-family="monospace" font-size="10" fill="#333">[bigquery] [docx] [pdf] [pptx] [xlsx] ...</text>
+  
+  <rect x="515" y="185" width="450" height="40" rx="6" fill="#fff8e1" stroke="#ffb74d" stroke-width="2"/>
+  <text x="525" y="200" font-family="Arial, sans-serif" font-size="9" fill="#888">User Request</text>
+  <text x="525" y="215" font-family="monospace" font-size="10" fill="#333">Fill out this PDF based on what you know about me</text>
+  
+  <rect x="515" y="230" width="450" height="30" rx="6" fill="#f3e5f5" stroke="#ce93d8" stroke-width="2"/>
+  <text x="525" y="243" font-family="Arial, sans-serif" font-size="9" fill="#888">Tool Use</text>
+  <text x="525" y="255" font-family="monospace" font-size="10" fill="#333">cat /mnt/skills/pdf/SKILL.md</text>
+  
+  <!-- Cached Item with Badge -->
+  <rect x="515" y="265" width="450" height="40" rx="6" fill="#e8f5e9" stroke="#4caf50" stroke-width="2"/>
+  <rect x="890" y="255" width="70" height="18" rx="9" fill="#4caf50"/>
+  <text x="925" y="267" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">✓ CACHED</text>
+  <text x="525" y="280" font-family="Arial, sans-serif" font-size="9" fill="#888">Tool Result (from cache)</text>
+  <text x="525" y="297" font-family="monospace" font-size="10" fill="#333">{stdout: "...contents of SKILL.md..."}</text>
+  
+  <rect x="515" y="310" width="450" height="30" rx="6" fill="#f3e5f5" stroke="#ce93d8" stroke-width="2"/>
+  <text x="525" y="323" font-family="Arial, sans-serif" font-size="9" fill="#888">Tool Use</text>
+  <text x="525" y="335" font-family="monospace" font-size="10" fill="#333">cat /mnt/skills/pdf/forms.md</text>
+  
+  <rect x="515" y="345" width="450" height="30" rx="6" fill="#e8f5e9" stroke="#4caf50" stroke-width="2"/>
+  <rect x="890" y="335" width="70" height="18" rx="9" fill="#4caf50"/>
+  <text x="925" y="347" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="bold" fill="white">✓ CACHED</text>
+  <text x="525" y="358" font-family="Arial, sans-serif" font-size="9" fill="#888">Tool Result (from cache)</text>
+  <text x="525" y="370" font-family="monospace" font-size="10" fill="#333">{stdout: "...contents of forms.md..."}</text>
+</svg>

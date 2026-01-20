@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Caching Strategy - Process Flow</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f8f6f1 0%, #e8e4dc 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 60px;
+            letter-spacing: -0.02em;
+        }
+        
+        .diagram-wrapper {
+            display: flex;
+            gap: 60px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .section {
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            min-width: 400px;
+            max-width: 600px;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Cache Pool */
+        .cache-pool {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 2px solid #4caf50;
+        }
+        
+        .cache-pool .section-title {
+            color: #2e7d32;
+        }
+        
+        .pool-item {
+            background: #fff;
+            border: 2px solid #81c784;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .pool-item-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        
+        .pool-item-icon {
+            width: 24px;
+            height: 24px;
+            background: #4caf50;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .pool-item-name {
+            font-weight: 600;
+            color: #2e7d32;
+        }
+        
+        .pool-item-preview {
+            color: #666;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            background: #f5f5f5;
+            padding: 8px 10px;
+            border-radius: 6px;
+            max-height: 60px;
+            overflow: hidden;
+        }
+        
+        /* Context Window */
+        .context-window {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #2196f3;
+        }
+        
+        .context-window .section-title {
+            color: #1565c0;
+        }
+        
+        .context-item {
+            background: #fff;
+            border: 2px solid #64b5f6;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .context-item.system {
+            border-color: #90caf9;
+        }
+        
+        .context-item.user {
+            border-color: #ffb74d;
+            background: linear-gradient(135deg, #fff8e1 0%, #fff 100%);
+        }
+        
+        .context-item.tool {
+            border-color: #ce93d8;
+            background: linear-gradient(135deg, #f3e5f5 0%, #fff 100%);
+        }
+        
+        .context-item.cached {
+            border-color: #4caf50;
+            background: linear-gradient(135deg, #e8f5e9 0%, #fff 100%);
+            position: relative;
+        }
+        
+        .cache-badge {
+            position: absolute;
+            top: -10px;
+            right: 10px;
+            background: #4caf50;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        
+        .context-label {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        
+        .context-content {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #333;
+            line-height: 1.4;
+        }
+        
+        /* Flow Arrow */
+        .flow-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 180px;
+        }
+        
+        .flow-arrow {
+            width: 100px;
+            height: 40px;
+            position: relative;
+        }
+        
+        .flow-arrow::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 70px;
+            height: 4px;
+            background: linear-gradient(90deg, #4caf50, #2196f3);
+            border-radius: 2px;
+        }
+        
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            border: 8px solid transparent;
+            border-left: 12px solid #2196f3;
+        }
+        
+        .flow-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .flow-stat {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 2px solid #ff9800;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .flow-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e65100;
+        }
+        
+        .flow-stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        /* Process Steps */
+        .process-flow {
+            margin-top: 60px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        
+        .process-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .step {
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .step:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -20px;
+            top: 40px;
+            font-size: 2rem;
+            color: #ccc;
+        }
+        
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0 auto 15px;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .step-desc {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        /* Legend */
+        .legend {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid;
+        }
+        
+        .legend-color.cached {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+        
+        .legend-color.new {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+        
+        .legend-color.pool {
+            background: #c8e6c9;
+            border-color: #4caf50;
+        }
+        
+        .legend-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        /* Comparison */
+        .comparison {
+            margin-top: 60px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .comparison-box {
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        }
+        
+        .comparison-box.without {
+            border-top: 4px solid #ef5350;
+        }
+        
+        .comparison-box.with {
+            border-top: 4px solid #4caf50;
+        }
+        
+        .comparison-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .without .comparison-title {
+            color: #c62828;
+        }
+        
+        .with .comparison-title {
+            color: #2e7d32;
+        }
+        
+        .token-bar {
+            height: 30px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .token-fill {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .token-fill.full {
+            width: 100%;
+            background: linear-gradient(90deg, #ef5350, #e57373);
+        }
+        
+        .token-fill.partial {
+            width: 15%;
+            background: linear-gradient(90deg, #ff9800, #ffb74d);
+        }
+        
+        .token-fill.cached-fill {
+            width: 85%;
+            background: linear-gradient(90deg, #4caf50, #81c784);
+        }
+        
+        .token-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #888;
+        }
+        
+        @media (max-width: 900px) {
+            .diagram-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .flow-section {
+                transform: rotate(90deg);
+            }
+            
+            .comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .step:not(:last-child)::after {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Skill Caching Strategy for LLM Context</h1>
+        
+        <div class="diagram-wrapper">
+            <!-- Cache Pool -->
+            <div class="section cache-pool">
+                <div class="section-title">📦 Pre-Cached Skill Pool</div>
+                
+                <div class="pool-item">
+                    <div class="pool-item-header">
+                        <div class="pool-item-icon">📄</div>
+                        <span class="pool-item-name">SKILL.md</span>
+                    </div>
+                    <div class="pool-item-preview">
+                        # PDF Skill<br>
+                        Comprehensive PDF manipulation toolkit...
+                    </div>
+                </div>
+                
+                <div class="pool-item">
+                    <div class="pool-item-header">
+                        <div class="pool-item-icon">📝</div>
+                        <span class="pool-item-name">forms.md</span>
+                    </div>
+                    <div class="pool-item-preview">
+                        **CRITICAL: You MUST complete these steps...**<br>
+                        If you need to fill out a PDF form...
+                    </div>
+                </div>
+                
+                <div class="pool-item">
+                    <div class="pool-item-header">
+                        <div class="pool-item-icon">📚</div>
+                        <span class="pool-item-name">reference.md</span>
+                    </div>
+                    <div class="pool-item-preview">
+                        Advanced PDF operations and utilities...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Flow Arrow -->
+            <div class="flow-section">
+                <div class="flow-label">Prefix Matching</div>
+                <div class="flow-arrow"></div>
+                <div class="flow-label">Token Comparison</div>
+                
+                <div class="flow-stat">
+                    <div class="flow-stat-value">85%</div>
+                    <div class="flow-stat-label">Cache Hit Rate</div>
+                </div>
+            </div>
+            
+            <!-- Context Window -->
+            <div class="section context-window">
+                <div class="section-title">🖥️ Context Window</div>
+                
+                <div class="context-item system">
+                    <div class="context-label">System Prompt</div>
+                    <div class="context-content">&lt;...agent's core system prompt...&gt;</div>
+                </div>
+                
+                <div class="context-item system">
+                    <div class="context-label">Skill Snippets</div>
+                    <div class="context-content">
+                        [bigquery] [docx] [pdf] [pptx] [xlsx] ...
+                    </div>
+                </div>
+                
+                <div class="context-item user">
+                    <div class="context-label">User Request</div>
+                    <div class="context-content">
+                        Fill out this PDF based on what you know about me<br>
+                        Attached: /mnt/uploads/order_form.pdf
+                    </div>
+                </div>
+                
+                <div class="context-item tool">
+                    <div class="context-label">Tool Use</div>
+                    <div class="context-content">cat /mnt/skills/pdf/SKILL.md</div>
+                </div>
+                
+                <div class="context-item cached">
+                    <div class="cache-badge">✓ CACHED</div>
+                    <div class="context-label">Tool Result (from cache)</div>
+                    <div class="context-content">
+                        {stdout: "...contents of SKILL.md..."}
+                    </div>
+                </div>
+                
+                <div class="context-item tool">
+                    <div class="context-label">Tool Use</div>
+                    <div class="context-content">cat /mnt/skills/pdf/forms.md</div>
+                </div>
+                
+                <div class="context-item cached">
+                    <div class="cache-badge">✓ CACHED</div>
+                    <div class="context-label">Tool Result (from cache)</div>
+                    <div class="context-content">
+                        {stdout: "...contents of forms.md..."}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Process Steps -->
+        <div class="process-flow">
+            <div class="process-title">How Skill Caching Works</div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Initialize Pool</div>
+                    <div class="step-desc">Pre-fetch skill files from URLs and tokenize into cache pool</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-title">User Request</div>
+                    <div class="step-desc">User asks to fill out a PDF form, triggering skill usage</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Claude Reads Skill</div>
+                    <div class="step-desc">Claude uses tool to read SKILL.md and referenced files</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Prefix Match</div>
+                    <div class="step-desc">Content matched against pool using longest common substring</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Cache Hit!</div>
+                    <div class="step-desc">85% of tokens found in cache, only 15% new tokens processed</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comparison -->
+        <div class="comparison">
+            <div class="comparison-box without">
+                <div class="comparison-title">❌ Without Skill Caching</div>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+                    Every request re-sends full skill documentation
+                </p>
+                <div class="token-bar">
+                    <div class="token-fill full">1,752 new tokens (100%)</div>
+                </div>
+                <div class="token-labels">
+                    <span>forms.md content</span>
+                    <span>All processed as new</span>
+                </div>
+            </div>
+            
+            <div class="comparison-box with">
+                <div class="comparison-title">✓ With Skill Caching</div>
+                <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+                    Pre-cached content enables prefix matching
+                </p>
+                <div class="token-bar" style="display: flex;">
+                    <div class="token-fill cached-fill">1,490 cached (85%)</div>
+                    <div class="token-fill partial">262 new</div>
+                </div>
+                <div class="token-labels">
+                    <span>forms.md content</span>
+                    <span>Only 15% new tokens</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color pool"></div>
+                <span class="legend-label">Pre-cached Skill Pool</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color cached"></div>
+                <span class="legend-label">Cache Hit (from pool)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color new"></div>
+                <span class="legend-label">New Tokens (not cached)</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
