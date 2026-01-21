@@ -132,14 +132,16 @@ Position 2500-3500:                       Position 4000-5000:
 
 ## Empirical Results: LMCache Agent Trace
 
-The [LMCache MemGPT benchmark results](https://github.com/LMCache/lmcache-agent-trace/tree/main/memgpt_result) demonstrate the dramatic difference:
+he [LMCache MemGPT benchmark results](https://github.com/LMCache/lmcache-agent-trace/tree/main/memgpt_result) demonstrate the dramatic difference:
+
+![LMCache MemGPT benchmark results](https://raw.githubusercontent.com/LMCache/lmcache-agent-trace/main/memgpt_result/memgpt1.png)
 
 ### Observed Cache Performance
 
 | Caching Strategy | Cache Hit Rate | Explanation |
 |------------------|----------------|-------------|
-| **Prefix Caching** | ~4-8% | Only system prompt prefix matches |
-| **Substring Caching** | ~60-80% | System prompt + archival docs + function defs all reused |
+| **Prefix Caching** | ~43.9% | Only system prompt prefix matches |
+| **Substring Caching** | ~93.4% | System prompt + archival docs + function defs all reused |
 
 ### Why Substring Caching Achieves High Hit Rates
 
@@ -153,30 +155,22 @@ The [LMCache MemGPT benchmark results](https://github.com/LMCache/lmcache-agent-
 
 ### Quantified Benefits
 
-```
-TYPICAL MEMGPT PROMPT (~6000 tokens)
-════════════════════════════════════
+### What Can Be Cached and Reused
 
-┌────────────────────────────────────────────────────────┐
-│ System Instructions    │████████████████│  2000 tokens │
-│                        │    CACHED      │              │
-├────────────────────────────────────────────────────────┤
-│ Working Context        │░░░░            │   500 tokens │
-│                        │   DYNAMIC      │              │
-├────────────────────────────────────────────────────────┤
-│ FIFO Queue             │░░░░░░░░        │  1500 tokens │
-│ (recent messages)      │   DYNAMIC      │              │
-├────────────────────────────────────────────────────────┤
-│ Retrieved Archival     │████████        │  1500 tokens │
-│                        │    CACHED      │   (if same)  │
-├────────────────────────────────────────────────────────┤
-│ Function Definitions   │████            │   500 tokens │
-│                        │    CACHED      │              │
-└────────────────────────────────────────────────────────┘
+CACHEABLE BLOCKS + TYPICAL MEMGPT PROMPT (~6000 tokens)
 
-PREFIX CACHING:    ~2000 / 6000 = 33% MAX (often less due to working context)
-SUBSTRING CACHING: ~4000 / 6000 = 67%+ (system + archival + functions)
-```
+| Block | Cacheability | Token share | Notes |
+|-------|--------------|-------------|-------|
+| System Instructions | CACHED | ~2000 | Static across turns (reusable) |
+| Working Context | DYNAMIC | ~500 | Not cacheable |
+| FIFO Queue (recent messages) | DYNAMIC | ~1500 | Recent messages |
+| Retrieved Archival | CACHED | ~1500 | Reusable if same doc |
+| Function Definitions | CACHED | ~500 | Tool schemas are static |
+| Recalled Conversations | CACHED | variable | Reusable if recalled |
+
+PREFIX CACHING:    ~2500 / 6000 = ~42% (often less due to working context).
+
+SUBSTRING CACHING: > 5500 / 6000 = 90%+ (system + archival + functions)
 
 ---
 
@@ -185,7 +179,7 @@ SUBSTRING CACHING: ~4000 / 6000 = 67%+ (system + archival + functions)
 MemGPT's memory management paradigm—with its dynamic Working Context, shifting FIFO Queue, and variable archival retrievals—fundamentally breaks prefix caching assumptions. The content that could be reused (system prompts, retrieved documents, function definitions) appears at different positions across turns.
 
 **Substring/block caching** solves this by matching token sequences regardless of position, enabling:
-- **Higher cache hit rates** (60-80% vs 4-8%)
+- **Higher cache hit rates** (93.4% vs 43.9%)
 - **Reduced prefill latency** for repeated archival retrievals
 - **Lower computational costs** for long-running agent sessions
 

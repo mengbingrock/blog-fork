@@ -2,20 +2,24 @@
 
 ## Overview
 
-This document describes a strategy for caching !skills[https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills] files (like `SKILL.md` and their referenced files) to enable efficient LLM prompt caching through context editing. By pre-processing and storing skill documentation in the correct format, we can achieve **85%+ cache hit rates** on skill-related content.
+We propose a strategy for caching [skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) files (like `SKILL.md` and their referenced files) to enable efficient LLM prompt caching through context editing. By pre-processing and storing skill documentation in the correct format, we can achieve **85%+ cache hit rates** on skill-related content.
 
-![Skill Caching Flow](skill_cache_flow.svg)
+
+Skill is a progressive disclosure: it provides just enough information in first several lines in skill.md - for Claude to know when each skill should be used without loading all of it into context. The actual body of this file is the second level of detail. If Claude thinks the skill is relevant to the current task, it will load the skill by reading its full SKILL.md into context.
+
+![Skill Progressive disclosure](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F191bf5dd4b6f8cfe6f1ebafe6243dd1641ed231c-1650x1069.jpg&w=3840&q=75)
 
 ## Problem Statement
 
-When LLM agents use skill files (e.g., ![PDF processing skills](https://github.com/anthropics/skills/blob/main/skills/pdf/SKILL.md)), the skill documentation is inserted into the user context. Without proper caching:
+When LLM agents use skill files (e.g., [PDF processing skills](https://github.com/anthropics/skills/blob/main/skills/pdf/SKILL.md)), the skill documentation is inserted into the user context. Without proper caching:
+
 - Each request re-sends the full skill documentation
 - No prefix matching occurs with previous requests
 - Token costs and latency increase linearly
 
 ## Solution: Pre-cached Skill Pool
 
-### 1. Skill Files to Cache
+###  Skill Files to Cache
 
 For each skill, cache the main skill file and all referenced files:
 
@@ -25,89 +29,22 @@ skills/pdf/
 ├── forms.md          # Referenced: PDF form filling guide
 └── reference.md      # Referenced: Advanced PDF operations
 ```
+![Skill Caching Flow](skill_cache_flow.svg)
 
-### 2. Cache Format
-
-Store skill files as plain text content:
-
-```
-**CRITICAL: You MUST complete these steps in order. Do not skip ahead to writing code.**
-
-If you need to fill out a PDF form, first check to see if the PDF has fillable form fields.
-```
-
-The caching system handles format normalization automatically - no need to worry about line numbers, JSON escaping, or other format variations.
-
-### 3. Implementation
-
-#### Cache Initialization
-
-```python
-SKILL_URLS = [
-    "https://raw.githubusercontent.com/anthropics/skills/main/skills/pdf/SKILL.md",
-    "https://raw.githubusercontent.com/anthropics/skills/main/skills/pdf/forms.md",
-    "https://raw.githubusercontent.com/anthropics/skills/main/skills/pdf/reference.md",
-]
-
-def initialize_skill_cache(urls: List[str]) -> List[str]:
-    """Initialize cache with skill file contents."""
-    cache = []
-    for url in urls:
-        content = fetch_url_content(url)
-        if content:
-            cache.append(content)
-    return cache
-```
 
 #### Context Editing for Cache Hits
 
-Traditional prefix caching requires skill content to appear at the **exact same position** in every prompt. However, with **CacheBlend**, we can concatenate pre-cached skill KV states with the existing context at any position:
+Traditional prefix caching requires skill content to appear at the **exact same position** in every prompt. However, with **CacheBlend**, we can concatenate pre-cached skill KV states with the existing context at any position.
 
-```python
-def construct_prompt_with_cacheblend(
-    system_prompt: str,
-    user_request: str,
-    skill_content: str,
-    skill_cache: KVCache  # Pre-computed KV cache for skill content
-) -> Tuple[str, KVCache]:
-    """
-    Use CacheBlend to concatenate cached skill with existing context.
-    
-    Unlike prefix caching, CacheBlend allows inserting pre-cached
-    skill content at ANY position in the prompt, not just the beginning.
-    """
-    # 1. Build the full prompt
-    prompt = f"""System: You are Claude Code...
-
-# User Request
-{user_request}
-
-# Tool Result: cat /mnt/skills/pdf/SKILL.md
-{skill_content}
-"""
-    
-    # 2. CacheBlend concatenates KV caches:
-    #    - Compute KV for tokens BEFORE skill insertion point
-    #    - REUSE pre-cached KV for skill_content (no recomputation!)
-    #    - Compute KV for tokens AFTER skill content
-    #    - Blend attention states at boundaries
-    
-    final_kv = cacheblend_concatenate(
-        prefix_kv=compute_kv(prompt[:skill_start]),
-        cached_kv=skill_cache,  # ← 85% of tokens skip prefill!
-        suffix_kv=compute_kv(prompt[skill_end:])
-    )
-    
-    return prompt, final_kv
-```
+![Blend the context](skill_combine.svg)
 
 **Key Advantage**: With CacheBlend, the skill content doesn't need to be at the prompt prefix. It can appear **after** dynamic content (user request, conversation history) and still achieve cache hits by concatenating pre-computed KV states.
 
-### How Skill Caching Works
+
 
 ![Skill Caching Process](skill_cache_process.svg)
 
-### 4. Cache Hit Analysis
+### Cache Hit Analysis
 
 With proper caching, we observed these results on skill-related requests:
 
@@ -119,7 +56,7 @@ With proper caching, we observed these results on skill-related requests:
 
 ![Cache Comparison](skill_cache_comparison.svg)
 
-### 5. Benefits
+### Benefits
 
 1. **Reduced Token Costs**: 85% of skill content hits cache → only 15% new tokens processed
 2. **Lower Latency**: Cached prefixes enable faster response generation
