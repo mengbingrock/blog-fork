@@ -48,14 +48,14 @@ TURN 1 PROMPT                              TURN 2 PROMPT
 ├───────────────────┤                      ├───────────────────┤
 │ Working Context:  │                      │ Working Context:  │
 │ User: "Alice"     │ ← MATCH              │ User: "Alice"     │
-│                   │                      │ Born in: 1999     │ ← UPDATED!
-├───────────────────┤  PREFIX              ├───────────────────┤
-│ FIFO Queue:       │  BREAKS              │ FIFO Queue:       │
-│ [msg1, msg2, msg3]|  HERE ✗              │ [msg2, msg3, msg4]│ ← SHIFTED!
+│                   │                      │ Born in: 1999     │ ← PREFIX BREAKS HERE ✗
+│ Archival: Doc_A   │                      │ Archival: Doc_A   │ ← SAME CONTENT (CACHEABLE)
+│ "The capital..."  │                      │ "The capital..."  │   
+│ Func Definitions  │                      │ Func Definitions  │ ← SAME (CACHEABLE)
 ├───────────────────┤                      ├───────────────────┤
-│ Retrieved from    │                      │ Retrieved from    │
-│ Archival: Doc_A   │  SAME                │ Archival: Doc_A   │ ← SAME CONTENT
-│ "The capital..."  │  CONTENT             │ "The capital..."  │   DIFFERENT POS
+│ FIFO Queue:       │                      │ FIFO Queue:       │
+│ [msg1, msg2, msg3]│                      │ [msg2, msg3, msg4]│ ← SHIFTED!
+│ Recalled Conv     │                      │ Recalled Conv     │ ← CACHEABLE
 └───────────────────┘                      └───────────────────┘
          │                                          │
          └──────────────┬───────────────────────────┘
@@ -66,8 +66,8 @@ TURN 1 PROMPT                              TURN 2 PROMPT
         │  • Working Context updates break      │
         │    prefix after system instructions   │
         │  • FIFO Queue shifts every turn       │
-        │  • Same archival content at different │
-        │    positions cannot be matched        │
+        │  • Archival Docs & Func Defs same     │
+        │    content but different positions    │
         └───────────────────────────────────────┘
 ```
 
@@ -97,21 +97,14 @@ CACHEABLE BLOCKS IN MEMGPT
 │  ★ SYSTEM INSTRUCTIONS (~2000 tokens)                   │
 │    Static across ALL turns → 100% reusable              │
 ├─────────────────────────────────────────────────────────┤
-│  ★ WORKING CONTEXT (MOST PARTS)                         │
-│    Recent state reused across turns → mostly reusable   │
+│  ★ WORKING CONTEXT (~2500 tokens)                       │
+│    Including Archival Documents and Function Definitions│
+│    Archival Documents and Function Definitions Cachable │
 ├─────────────────────────────────────────────────────────┤
-│  ★ MESSAGE QUEUE (MOST RECENT MESSAGES)                 │
-│    Recent messages often persist → mostly reusable      │
-├─────────────────────────────────────────────────────────┤
-│  ★ ARCHIVAL DOCUMENTS                                   │
-│    Same doc retrieved multiple times → reusable         │
-│    "The capital of France is Paris..."                  │
-├─────────────────────────────────────────────────────────┤
-│  ★ FUNCTION DEFINITIONS                                 │
-│    Tool schemas are static → 100% reusable              │
-├─────────────────────────────────────────────────────────┤
-│  ★ RECALLED CONVERSATION BLOCKS                         │
-│    Previously seen message pairs → reusable             │
+│  ★ FIFO QUEUE (~1500 tokens)                            │
+│    Recent Messages & Recalled Conversations             │
+│    Recalled Conversations put into Working Context      │
+│    Reusable if recalled                                 │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -123,13 +116,21 @@ TURN 1                                    TURN 5
 
 Position 0-2000:                          Position 0-2000:
 ┌─────────────────┐                       ┌─────────────────┐
-│ System Prompt   │ ◄─── CACHE HIT ────►  │ System Prompt   │
+│ System Instruct │ ◄─── CACHE HIT ────►  │ System Instruct │
 └─────────────────┘                       └─────────────────┘
 
-Position 2500-3500:                       Position 4000-5000:
+Position 2000-4500:                       Position 2000-4500:
 ┌─────────────────┐                       ┌─────────────────┐
-│ Doc: "Paris..." │ ◄─── CACHE HIT ────►  │ Doc: "Paris..." │
-└─────────────────┘   (different pos!)    └─────────────────┘
+│ Working Context │ ◄─── CACHE HIT ────►  │ Working Context │
+│ (Archival Docs, │   (Archival Docs &    │ (Archival Docs, │
+│  Func Defs)     │    Func Defs cached)  │  Func Defs)     │
+└─────────────────┘                       └─────────────────┘
+
+Position 4500-6000:                       Position 4500-6000:
+┌─────────────────┐                       ┌─────────────────┐
+│ FIFO Queue      │ ◄─── CACHE HIT ────►  │ FIFO Queue      │
+│ (Recalled Conv) │   (different pos!)    │ (Recalled Conv) │
+└─────────────────┘                       └─────────────────┘
 
     ✅ NON-PREFIX CACHE: Matches by CONTENT, not position
 ```
@@ -168,11 +169,8 @@ CACHEABLE BLOCKS + TYPICAL MEMGPT PROMPT (~6000 tokens)
 | Block | Cacheability | Token share | Notes |
 |-------|--------------|-------------|-------|
 | System Instructions | CACHED | ~2000 | Static across turns (reusable) |
-| Working Context | DYNAMIC | ~500 | Not cacheable |
-| FIFO Queue (recent messages) | DYNAMIC | ~1500 | Recent messages |
-| Retrieved Archival | CACHED | ~1500 | Reusable if same doc |
-| Function Definitions | CACHED | ~500 | Tool schemas are static |
-| Recalled Conversations | CACHED | variable | Reusable if recalled |
+| Working Context(including Archival Documents and Function Definitions) | DYNAMIC | ~2500 | Archival Documents and Function Definitions Cachable |
+| FIFO Queue (Recent Messages & Recalled Conversations) | DYNAMIC(recent) and CACHED(recalled) | ~1500 | Recent messages & Recalled Conversations putting into Working Context, reusable if recalled |
 
 PREFIX CACHING:    ~2500 / 6000 = ~42% (often less due to working context).
 
