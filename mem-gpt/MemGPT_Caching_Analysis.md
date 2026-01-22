@@ -1,5 +1,18 @@
 # MemGPT: Where Prefix Caching Fails and Substring Caching Succeeds
 
+## TL;DR
+
+MemGPT's dynamic memory architecture breaks traditional prefix caching due to frequent context mutations. Substring caching achieves **~93.4% cache hit rate** compared to only **~43.9%** with prefix caching.
+
+| Caching Strategy | Cache Hit Rate |
+|------------------|----------------|
+| **Prefix Caching** | ~43.9% |
+| **Substring Caching** | ~93.4% |
+
+![LMCache MemGPT benchmark results](https://raw.githubusercontent.com/LMCache/lmcache-agent-trace/main/memgpt_result/memgpt1.png)
+
+---
+
 ## Introduction
 
 MemGPT is an innovative system that enables LLMs to manage their own memory, effectively creating "virtual context" that extends beyond the finite context window. By treating the context window like an operating system manages virtual memory, MemGPT allows persistent conversations and document analysis that would otherwise exceed token limits.
