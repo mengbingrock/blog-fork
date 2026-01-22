@@ -171,7 +171,7 @@ Analysis of RepoAgent traces from [LLM Agent Trace Viewer](https://v0-llm-agent-
 | ------------------------------- | --------------------------------- |
 | **Total Traces**          | 186                               |
 | **Avg Input Length**      | 14,608 characters (~3,650 tokens) |
-| **Prefix Cache Hit Rate** | **4%**                      |
+| **Prefix Cache Hit Rate** | **3.4%**                      |
 | **Prefix Match Range**    | 0% - 24% per request              |
 
 Result: Only **~1% of tokens** are reusable via prefix caching.
@@ -228,27 +228,10 @@ LMCache benchmarks demonstrate the dramatic improvement:
 
 | Caching Strategy             | Hit Rate       | Improvement               |
 | ---------------------------- | -------------- | ------------------------- |
-| **Prefix Caching**     | < 4%           | Baseline                  |
-| **Non-Prefix Caching** | **>80%** | **20x improvement** |
+| **Prefix Caching**     | < 3.4%           | Baseline                  |
+| **Non-Prefix Caching** | **>85.9%** | **25x improvement** |
 
 ![RepoAgent Cache Hit Rate Comparison](https://github.com/yamazakihirofumi/lmcache-agent-trace/blob/main/RepoAgent_result/RepoAgent_result.png?raw=true)
-
----
-
-## Implications for LLM Agent Design
-
-### Recommendations
-
-RepoAgent represents a growing class of LLM applications where:
-
-- Prompts contain**reusable components** (instructions, reference docs, examples)
-- These components appear at**variable positions** due to dynamic context
-- Traditional prefix caching provides**<10% hit rates**
-- Non-prefix caching can achieve**>70% hit rates**
-
-1. **For Prompt Engineering**: Consider prompt restructuring to move static content earlier, but recognize that for complex agents, non-prefix caching is often the only effective solution.
-2. **For Agent Developers**: When building recursive or reference-heavy agents like RepoAgent, expect prefix caching to be ineffective. Design prompts with non-prefix caching in mind.
-3. **For Infrastructure**: LLM serving systems should implement substring/block matching algorithms to maximize cache efficiency for agent workloads.
 
 ---
 
